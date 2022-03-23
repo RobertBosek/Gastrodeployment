@@ -1,0 +1,4 @@
+aruco:	150cm+
+
+seedmarker: ca. 50cm
+sidemarker: ca. 50cm
