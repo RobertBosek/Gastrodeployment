@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 import cv2
+import cv2.aruco as aruco
 
 from .FiducialsDetectorService import FiducialsDetectorService
 
@@ -11,6 +12,8 @@ from rcl_interfaces.msg import ParameterType, ParameterDescriptor
 from aruco_interfaces.msg import ArucoList, ArucoMarker
 
 from cv_bridge import CvBridge
+
+DEBUG_MODE = True
 
 
 class ImageSubscriber(Node):
@@ -56,10 +59,27 @@ class ImageSubscriber(Node):
         # Call the VIGITIA service
         aruco_markers = self.fiducials_detector.detect_fiducials(frame_gray)
 
-        aruco_list = ArucoList()
-        aruco_list.header = data.header
+        aruco_list = self.convert_to_aruco_interface_msg(aruco_markers, data.header)
 
-        for marker in aruco_markers:
+        if len(aruco_markers) > 0:
+            self.publisher.publish(aruco_list)
+
+            # Display image
+            if DEBUG_MODE:
+                print("[Fiducials Detector Node]: publishing ", len(aruco_markers), " detected markers")
+                marker_detection = current_frame.copy()
+                for marker in aruco_markers:
+                    aruco.drawDetectedMarkers(marker_detection, [np.array([marker['corners']], dtype=np.float32)], np.array([marker['id']], dtype=np.int))
+                cv2.imshow('markers_detected', marker_detection)
+
+        cv2.waitKey(1)
+
+    def convert_to_aruco_interface_msg(self, marker_list, header=None):
+        aruco_list = ArucoList()
+        if header is not None:
+            aruco_list.header = header
+
+        for marker in marker_list:
             aruco_marker = ArucoMarker()
             aruco_marker.id = int(marker['id'])
             aruco_marker.angle = marker['angle']
@@ -78,37 +98,7 @@ class ImageSubscriber(Node):
 
             aruco_list.aruco_markers.append(aruco_marker)
 
-        if len(aruco_markers) > 0:
-            print(aruco_markers[0])
-            self.publisher.publish(aruco_list)
-
-        # Display image
-        cv2.imshow("camera", current_frame)
-
-        cv2.waitKey(1)
-
-    # # convert a ROS Image message to an OpenCV BGRA image
-    # def imgmsg_to_cv2(self, img_msg):
-    #     dtype = np.dtype("uint8")  # Hardcode to 8 bits
-    #     dtype = dtype.newbyteorder('>' if img_msg.is_bigendian else '<')
-    #     # Since OpenCV works with bgr natively, we don't need to reorder the channels.
-    #     image_opencv = np.ndarray(shape=(img_msg.height, img_msg.width, 4), dtype=dtype, buffer=img_msg.data)
-    #     # If the byte order is different between the message and the system.
-    #     if img_msg.is_bigendian == (sys.byteorder == 'little'):
-    #         image_opencv = image_opencv.byteswap().newbyteorder()
-    #
-    #     return image_opencv
-    #
-    # def cv2_to_imgmsg(self, cv_image):
-    #     img_msg = Image()
-    #     img_msg.height = cv_image.shape[0]
-    #     img_msg.width = cv_image.shape[1]
-    #     img_msg.encoding = "bgr8"
-    #     img_msg.is_bigendian = 0
-    #     img_msg.data = cv_image.tostring()
-    #     img_msg.step = len(
-    #         img_msg.data) // img_msg.height  # That double line is actually integer division, not a comment
-    #     return img_msg
+        return aruco_list
 
 
 def main(args=None):

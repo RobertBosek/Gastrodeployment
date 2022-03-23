@@ -8,7 +8,7 @@ from aruco_interfaces.msg import ArucoList, ArucoMarker
 from sensor_msgs.msg import Image  # Image is the message type
 from cv_bridge import CvBridge
 
-
+DEBUG_MODE = True
 
 class ArucoSubscriber(Node):
 
@@ -76,6 +76,10 @@ class ArucoSubscriber(Node):
 
             print(cube_pose)
             self.publisher.publish(cube_pose)
+
+            # Display image
+            if DEBUG_MODE:
+                print("[Cube Tracker Node]: Publishing Cube Pose", cube_geoms)
 
 
 

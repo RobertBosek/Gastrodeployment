@@ -61,7 +61,7 @@ class VIGITIABrioFramesNode(Node):
             # FPS Counter
             counter += 1
             if (time.time() - start_time) > 1:  # displays the frame rate every 1 second
-                print("[VIGITIA Frames Node]: FPS: ", round(counter / (time.time() - start_time), 1))
+                print("[VIGITIA Brio Node]: FPS: ", round(counter / (time.time() - start_time), 1))
                 counter = 0
                 start_time = time.time()
 

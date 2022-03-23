@@ -51,12 +51,10 @@ class SurfaceSelectorNode(Node):
 
         # Convert ROS Image message to OpenCV image
         current_frame = self.cv_bridge.imgmsg_to_cv2(data)
-        cv2.imshow('test', current_frame)
-
 
         calibration_finished = self.surface_selector.select_surface(current_frame)
         if calibration_finished:
-            print('Calibration Finished')
+            print("[Surface Selector Node]: Calibration Finished")
             exit()
 
         cv2.waitKey(1)

@@ -12,7 +12,7 @@ from cv_bridge import CvBridge
 
 from .table_extraction_service import TableExtractionService
 
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 
 class TableExtractorNode(Node):
@@ -60,6 +60,7 @@ class TableExtractorNode(Node):
         self.publisher_rgb_table.publish(self.cv_bridge.cv2_to_imgmsg(color_image_table, "passthrough"))
 
         if DEBUG_MODE:
+            print("[Surface Extractor Node]: Mapping Table area")
             cv2.imshow("table_area", color_image_table)
 
         cv2.waitKey(1)

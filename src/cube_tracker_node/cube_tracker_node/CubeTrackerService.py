@@ -5,7 +5,7 @@ RADIAN_RATIO = 0.7
 MARKER_TO_CUBE_RATIO = 4
 EDGE_DISTANCE_TO_MARKERSIDELENGHT_RATIO = 10
 
-DEBUG = True
+DEBUG_MODE = False
 
 
 # a Cube with 6 faces and each face having a marker on each corner can be tracked using this class.
@@ -40,12 +40,12 @@ class CubeDetector:
     # this only works for markers with ids between 0 and 23
     def get_cube_spatial_info(self, markers):
         if len(markers) == 4:
-            if DEBUG:
+            if DEBUG_MODE:
                 print("[CubesideDetectionService]: 4 markers found")
             return self.__get_geometrics(markers)
 
         elif len(markers) == 3:
-            if DEBUG:
+            if DEBUG_MODE:
                 print("[CubesideDetectionService]: 3 markers found")
             # get the mean orthogonal length of all present markers
             orthogonal_lengths = self.__get_orth_lengths(markers)
@@ -53,7 +53,7 @@ class CubeDetector:
             return self.__get_geometrics(markers_with_substitution, cube_centroid)
 
         elif len(markers) == 2:
-            if DEBUG:
+            if DEBUG_MODE:
                 print("[CubesideDetectionService]: 2 markers found")
             approx = []
             # get an approximation of the cubeside geoms for each marker
@@ -68,12 +68,12 @@ class CubeDetector:
             return cube_geoms
 
         elif len(markers) == 1:
-            if DEBUG:
+            if DEBUG_MODE:
                 print("[CubesideDetectionService]: 1 marker found")
             return self.__approx_cube_geoms(markers)
 
         else:
-            if DEBUG:
+            if DEBUG_MODE:
                 print("[CubesideDetectionService]: Detection is only possible with one up to four markers")
             return None
 
