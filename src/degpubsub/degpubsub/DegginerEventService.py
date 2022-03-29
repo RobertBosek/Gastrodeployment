@@ -1,7 +1,11 @@
 import requests
+import json
+from datetime import datetime as dt
+import os
 from bs4 import BeautifulSoup
 
-
+CACHE_PATH = "../../../degginger_events"
+FILENAME = ["eventslist",".json"]
 
 class DeggingerEventService:
 
@@ -16,22 +20,43 @@ class DeggingerEventService:
         }
         self.url = url
         self.base_url = url.split("/degginer")[0]
-        self.HTMLeventslist = self.reload()
+
+        d = dt.now()
+        file = "{}/{}_{}_{}_{}{}".format(CACHE_PATH, FILENAME[0], d.year, d.month, d.day, FILENAME[1])
+
+        if os.path.isfile(file):
+            print("no call")
+            with open(file, 'r') as f:
+                self.eventslist = json.load(f)
+        else:
+            self.eventslist = self.reload()
+
+            '''
+            #clear directory
+            for f in os.listdir(CACHE_PATH):
+                os.remove(os.path.join(CACHE_PATH, f))
+            '''
+
+            with open(file, 'w') as f:
+                json.dump(self.eventslist, f)
+
+
         
     def reload(self):
         resp = requests.get(self.url)
+        print("[DeggingerEventService]: calling {}".format(self.url))
         soup = BeautifulSoup(resp.text, 'html.parser')
         #find the eventlist within the HTML-Body
         eventlist = soup.body.find("div", {"class": self.classtags['event_list']})
         #find all single events in the list and return them as list of HTML-Elements
         events = eventlist.find_all("div", {"class": self.classtags['list_item']})
-        return events
+        return self.get_events(events)
 
     # get parsed information from the loaded list of HTML-Events
-    def get_events(self):
+    def get_events(self, HTMLevents):
 
         eventslist = []
-        for event in self.HTMLeventslist:
+        for event in HTMLevents:
             eventdict = self._extractInfo(event)
             eventslist.append(eventdict)
         return eventslist
@@ -64,7 +89,8 @@ class DeggingerEventService:
 
 def main():
     test = DeggingerEventService('https://www.regensburg.de/degginger/programm')
-    listed = test.get_events()
+    print("here")
+    listed = test.eventslist
     for ev in listed:
         print(ev)
 

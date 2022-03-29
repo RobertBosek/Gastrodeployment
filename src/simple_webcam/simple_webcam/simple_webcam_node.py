@@ -23,7 +23,7 @@ class WebcamNode(Node):
     def __init__(self):
         super().__init__('webcam_frames_node')
 
-        self.publisher = self.create_publisher(msg_type=Image, topic='/vigitia/rgb_full', qos_profile=10)
+        self.publisher = self.create_publisher(msg_type=Image, topic='/vigitia/rgb_table', qos_profile=10)
 
         self.cv_bridge = CvBridge()
 

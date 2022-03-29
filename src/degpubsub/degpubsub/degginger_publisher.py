@@ -79,7 +79,7 @@ class DeggingerEventService:
 
 
 
-#from DeggingerEventService import DeggingerEventService
+from .DeggingerEventService import DeggingerEventService
 import rclpy
 from rclpy.node import Node
 
