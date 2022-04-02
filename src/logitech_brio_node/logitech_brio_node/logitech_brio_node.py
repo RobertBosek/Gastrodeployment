@@ -9,6 +9,7 @@ import rclpy
 from rclpy.node import Node
 
 from sensor_msgs.msg import Image
+from example_interfaces.srv import SetBool
 
 from cv_bridge import CvBridge
 
@@ -17,6 +18,13 @@ from .logitech_brio import LogitechBrio
 DEBUG_MODE = True
 
 FLIP_IMAGE = False  # Necessary if the camera is upside down (very ressource intensive!)
+
+'''
+bool data # e.g. for hardware enabling / disabling
+---
+bool success   # indicate successful run of triggered service
+string message # informational, e.g. for error messages
+'''
 
 
 class VIGITIABrioFramesNode(Node):
@@ -30,9 +38,30 @@ class VIGITIABrioFramesNode(Node):
 
         self.logitech_brio_camera = LogitechBrio()
         self.logitech_brio_camera.init_video_capture()
-        self.logitech_brio_camera.start()
 
+        #self.logitech_brio_camera.start()
+
+        self.srv = self.create_service(SetBool, '/ble_signal', self.toggle_frames)
+        print('service and publisher setup')
         self.loop()
+
+    def toggle_frames(self, request, response):
+        print('received')
+        print(request.data)
+        if request.data:
+            self.logitech_brio_camera.start()
+            response.success = True
+            response.message = 'frames on'
+        else:
+            self.logitech_brio_camera.stop()
+            response.success = True
+            response.message = 'frames off'
+
+        print("[VIGITIA Brio Node]: toggle frame ", request.data)
+
+        #self.get_logger().info('Incoming request: %d b: %d' % (request.a, request.b))
+
+        return response
 
     # The main application loop. Code parts for fps counter from
     # https://stackoverflow.com/questions/43761004/fps-how-to-divide-count-by-time-function-to-determine-fps
@@ -40,7 +69,6 @@ class VIGITIABrioFramesNode(Node):
         # Variables for fps counter
         start_time = 0
         counter = 0
-
         while True:
             #color_image, depth_image, left_ir_image = self.realsense_d435_camera.get_frames()  # Get frames from cameras
             color_image = self.logitech_brio_camera.get_frames()

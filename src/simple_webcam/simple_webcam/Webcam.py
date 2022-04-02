@@ -82,7 +82,6 @@ class GenericWebcam:
     def init_video_capture(self, camera_id=CAMERA_ID, resolution_x=RES_X, resolution_y=RES_Y, fps=FPS):
         print("setting params")
 
-
         self.capture = cv2.VideoCapture(camera_id)
 
         fourcc = cv2.VideoWriter_fourcc('M', 'J', 'P', 'G')

@@ -9,7 +9,7 @@ import rclpy  # Python library for ROS 2
 from rclpy.node import Node  # Handles the creation of nodes
 from sensor_msgs.msg import Image  # Image is the message type
 from rcl_interfaces.msg import ParameterType, ParameterDescriptor
-from aruco_interfaces.msg import ArucoList, ArucoMarker
+from vigitia_interfaces.msg import ArucoList, ArucoMarker
 
 from cv_bridge import CvBridge
 

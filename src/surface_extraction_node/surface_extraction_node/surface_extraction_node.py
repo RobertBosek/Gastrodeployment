@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import cv2
+import numpy as np
 
 import rclpy  # Python library for ROS 2
 from rclpy.node import Node  # Handles the creation of nodes

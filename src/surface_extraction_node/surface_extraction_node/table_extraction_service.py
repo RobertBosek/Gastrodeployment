@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+
 import cv2
 import numpy as np
 import configparser
@@ -52,7 +54,6 @@ class TableExtractionService:
         matrix = cv2.getPerspectiveTransform(pts1, pts2)
 
         frame = cv2.warpPerspective(frame, matrix, (x, y))
-
         return frame
 
     # def get_table_border(self):
