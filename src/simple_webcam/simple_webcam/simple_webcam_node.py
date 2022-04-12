@@ -9,8 +9,8 @@ import rclpy
 from rclpy.node import Node
 
 from sensor_msgs.msg import Image
-from vigitia_interfaces.srv import BLEToggle
-from vigitia_interfaces.srv import BLEToggle as VIGITIAMovement
+from vigitia_interfaces.srv import SensorToggle
+from vigitia_interfaces.srv import SensorToggle as VIGITIAMovement
 
 from cv_bridge import CvBridge
 
@@ -26,7 +26,7 @@ class WebcamNode(Node):
         super().__init__('webcam_frames_node')
 
         self.publisher = self.create_publisher(msg_type=Image, topic='/vigitia/brio_rgb_full', qos_profile=10)
-        self.ble_srv = self.create_service(BLEToggle, '/vigitia/toggle_camera', self.toggle_camera_callback)
+        self.ble_srv = self.create_service(SensorToggle, '/vigitia/toggle_camera', self.toggle_camera_callback)
         self.move_srv = self.create_service(VIGITIAMovement, '/vigitia/person_near', self.toggle_movement_callback)
 
         self.cv_bridge = CvBridge()

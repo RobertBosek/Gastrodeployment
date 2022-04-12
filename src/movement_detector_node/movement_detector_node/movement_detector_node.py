@@ -1,6 +1,6 @@
 import sys
 
-from vigitia_interfaces.srv import BLEToggle as VIGITIAMovement
+from vigitia_interfaces.srv import SensorToggle as VIGITIAMovement
 import rclpy
 from rclpy.node import Node
 

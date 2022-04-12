@@ -1,56 +1,67 @@
 import sys
 
-from example_interfaces.srv import SetBool
+from vigitia_interfaces.srv import SensorToggle
+
+#TODO: define Movement service and update topic name
+#from vigitia_interfaces.srv import VIGITIAMovement
+from vigitia_interfaces.srv import SensorToggle as VIGITIAMovement
 import rclpy
 from rclpy.node import Node
 
-
-'''
-bool data # e.g. for hardware enabling / disabling
----
-bool success   # indicate successful run of triggered service
-string message # informational, e.g. for error messages
-'''
+from .sensor_switch import SensorSwitch
 
 
-class BLESensorNode(Node):
+class SensorSwitchNode(Node):
 
     def __init__(self):
-        super().__init__('cube_activation_signal')
-        self.cli = self.create_client(SetBool, '/ble_signal')
-        while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-        self.req = SetBool.Request()
-        print(self.req)
-        #init ble_sensor()
-        #send request when cube activated/deactivated
-        #self.send_request()
+        super().__init__('sensor_switch_node')
+        self.cli = self.create_client(SensorToggle, '/vigitia/toggle_camera')
+        self.srv = self.create_service(VIGITIAMovement, '/vigitia/person_near', self.toggle_ble_callback)
+        self.sensor_switch = SensorSwitch(self)
 
-    def send_request(self):
-        self.req.data = True
-        print('sending req')
+        #TODO: remove loop
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service for /vigitia/toggle_camera not available, waiting...')
+        self.req = SensorToggle.Request()
+
+    def toggle_ble_callback(self, request, response):
+        self.get_logger().info('Incoming request: %s scanning for cube switch poition' % ('start' if request.active else 'end'))
+
+        if request.active:
+            self.sensor_switch.start()
+        else:
+            self.sensor_switch.stop()
+        response.status = 'successful'
+
+        return response
+
+    def send_request(self, status):
+        self.req.active = status
         self.future = self.cli.call_async(self.req)
 
 
 def main(args=None):
     rclpy.init(args=args)
-    minimal_client = BLESensorNode()
-    minimal_client.send_request()
+
+    sensor_switch_node = SensorSwitchNode()
+
+    rclpy.spin(sensor_switch_node)
+    '''
     while rclpy.ok():
-        rclpy.spin_once(minimal_client)
-        if minimal_client.future.done():
+        rclpy.spin_once(sensor_switch_node)
+        if sensor_switch_node.future.done():
             try:
-                response = minimal_client.future.result()
+                response = sensor_switch_node.future.result()
             except Exception as e:
-                minimal_client.get_logger().info(
+                sensor_switch_node.get_logger().info(
                     'Service call failed %r' % (e,))
             else:
-                minimal_client.get_logger().info(
-                    'Result of add_two_ints: for %d + %d = %d' %
-                    (minimal_client.req.a, minimal_client.req.b, response.sum))
+                sensor_switch_node.get_logger().info(
+                    'Result of request: sent %s ; received %s' %
+                    (sensor_switch_node.req.active, response.status))
             break
-
-    minimal_client.destroy_node()
+    '''
+    sensor_switch_node.destroy_node()
     rclpy.shutdown()
 
 

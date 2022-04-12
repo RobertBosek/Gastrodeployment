@@ -3,7 +3,7 @@ import asyncio
 from bleak import BleakScanner
 
 
-class BLESwitch:
+class SensorSwitch:
 
     def __init__(self, node=None):
         self.node = node
@@ -56,7 +56,7 @@ class BLESwitch:
 
 def main(args=None):
     loop = asyncio.get_event_loop()
-    b = BLESwitch()
+    b = SensorSwitch()
     loop.run_until_complete(b.run())
 
 
