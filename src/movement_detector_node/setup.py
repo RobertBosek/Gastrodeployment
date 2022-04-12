@@ -1,8 +1,6 @@
-import os
-from glob import glob
 from setuptools import setup
 
-package_name = 'ble_switch_node'
+package_name = 'movement_detector_node'
 
 setup(
     name=package_name,
@@ -12,7 +10,6 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        (os.path.join('share', package_name), glob('launch/*_launch.py'))
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -23,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'ble_switch_node = ble_switch_node.ble_switch_node:main',
+            'movement_detector_node_on = movement_detector_node.movement_detector_node:main',
+            'movement_detector_node_off = movement_detector_node.movement_detector_node_off:main',
         ],
     },
 )

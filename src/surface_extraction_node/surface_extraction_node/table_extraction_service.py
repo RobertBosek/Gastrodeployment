@@ -13,6 +13,7 @@ CONFIG_FILE_NAME = 'config.ini'
 class TableExtractionService:
     config = {}
 
+    #TODO: reload config file
     def __init__(self):
         self.read_config_file()
 

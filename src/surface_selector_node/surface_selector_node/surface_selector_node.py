@@ -8,7 +8,6 @@ from rclpy.node import Node  # Handles the creation of nodes
 
 from sensor_msgs.msg import Image  # Image is the message type
 from rcl_interfaces.msg import ParameterType, ParameterDescriptor
-from aruco_interfaces.msg import ArucoList, ArucoMarker
 
 from cv_bridge import CvBridge
 
@@ -36,10 +35,6 @@ class SurfaceSelectorNode(Node):
             self.get_parameter("camera_type").get_parameter_value().string_value,  # Name des Topics
             self.listener_callback,
             self.get_parameter("queue_length").get_parameter_value().integer_value)
-
-        self.publisher = self.create_publisher(msg_type=ArucoList,
-                                               topic='/aruco_list',
-                                               qos_profile=10)
 
         self.surface_selector = SurfaceSelector(self.get_parameter("camera_type").get_parameter_value().string_value)
 

@@ -1,18 +1,19 @@
 import sys
 
-from vigitia_interfaces.srv import BLEToggle
+from vigitia_interfaces.srv import BLEToggle as VIGITIAMovement
 import rclpy
 from rclpy.node import Node
 
 
-class MinimalClientAsync(Node):
+class MovementDectectorClient(Node):
 
     def __init__(self):
         super().__init__('minimal_client_async')
-        self.cli = self.create_client(BLEToggle, 'toggle_camera')
+        self.cli = self.create_client(VIGITIAMovement, '/vigitia/person_near')
+
         while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-        self.req = BLEToggle.Request()
+            self.get_logger().info('/vigitia/person_near service not available, waiting again...')
+        self.req = VIGITIAMovement.Request()
 
     def send_request(self, status):
         self.req.active = status
@@ -22,8 +23,8 @@ class MinimalClientAsync(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    minimal_client = MinimalClientAsync()
-    minimal_client.send_request(True)
+    minimal_client = MovementDectectorClient()
+    minimal_client.send_request(False)
 
     while rclpy.ok():
         rclpy.spin_once(minimal_client)

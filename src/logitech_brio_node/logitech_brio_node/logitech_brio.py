@@ -31,18 +31,18 @@ class LogitechBrio:
         self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution_y)
         self.capture.set(cv2.CAP_PROP_FPS, fps)
 
-    def start(self):
+    def start(self, frames_node):
         if self.started:
             print('Already running')
             return None
         else:
             self.started = True
-            self.thread = threading.Thread(target=self.update, args=())
+            self.thread = threading.Thread(target=self.update, args=(frames_node, ))
             # thread.daemon = True
             self.thread.start()
             return self
 
-    def update(self):
+    def update(self, *args):
 
         while self.started:
             ret, frame = self.capture.read()
@@ -52,6 +52,7 @@ class LogitechBrio:
                     print('WARNING: Output image resolution for additional camera is smaller then expected!')
                 with self.read_lock:
                     self.frame = frame
+                args[0].publisher.publish(args[0].cv_bridge.cv2_to_imgmsg(frame, "passthrough"))
 
     def get_frames(self):
         with self.read_lock:

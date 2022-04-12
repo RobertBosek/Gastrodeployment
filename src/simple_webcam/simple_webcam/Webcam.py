@@ -6,6 +6,7 @@
 
 import cv2
 import threading
+import time
 
 # Default values for the camera settings
 
@@ -73,14 +74,17 @@ class GenericWebcam:
 
     # The newest frame will be stored in this variable
     frame = None
+    counter = 0
+    start_time = time.time()
+    thread = None
 
-    def __init__(self, ):
+    def __init__(self, node=None):
+        self.node = node
         self.started = False
         self.read_lock = threading.Lock()
 
     # If no settings are provided as arguments, the default values will be used
     def init_video_capture(self, camera_id=CAMERA_ID, resolution_x=RES_X, resolution_y=RES_Y, fps=FPS):
-        print("setting params")
 
         self.capture = cv2.VideoCapture(camera_id)
 
@@ -108,10 +112,6 @@ class GenericWebcam:
 
         '''
 
-    def adjust_params(self, fps=FPS, exposure=EXPOSURE_TIME):
-        self.capture.set(cv2.CAP_PROP_FPS, fps)
-        self.capture.set(cv2.CAP_PROP_EXPOSURE, exposure)
-
     # Start a thread for async video capturing
     def start(self):
         if self.started:  # Prevent the thread from starting it again if it is already running
@@ -130,8 +130,17 @@ class GenericWebcam:
 
             # If a new frame is available, store it in the corresponding variable
             if frame is not None:
+                self.counter += 1
                 with self.read_lock:
                     self.frame = frame
+
+                    if self.node is not None:
+                        self.node.publisher.publish(self.node.cv_bridge.cv2_to_imgmsg(self.frame, "passthrough"))
+                        if (time.time() - self.start_time) > 1:  # displays the frame rate every 1 second
+                            self.node.get_logger().info("FPS: %s" % round(self.counter / (time.time() - self.start_time), 1))
+                            self.counter = 0
+                            self.start_time = time.time()
+
 
     # Call this method from the outside to get the latest stored frame
     def get_last_frame(self):
@@ -145,8 +154,9 @@ class GenericWebcam:
 
     # Stop the thread
     def stop(self):
-        self.started = False
-        self.thread.join()
+        if self.started:
+            self.started = False
+            self.thread.join()
 
     # Release the camera if the script is stopped
     def __exit__(self, exec_type, exc_value, traceback):

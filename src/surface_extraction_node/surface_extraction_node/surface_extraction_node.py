@@ -22,6 +22,8 @@ class TableExtractorNode(Node):
         super().__init__('brio_subscriber_tablearea_publisher')
 
         self.cv_bridge = CvBridge()
+
+        #TODO: reloadable config file
         self.table_extraction_service = TableExtractionService()
 
         rgb_full_parameter = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='Camera type')

@@ -8,13 +8,13 @@ class MinimalService(Node):
 
     def __init__(self):
         super().__init__('minimal_service')
-        self.srv = self.create_service(BLEToggle, 'add_two_ints', self.add_two_ints_callback)
+        self.srv = self.create_service(BLEToggle, 'toggle_camera', self.toggle_camera_callback)
         c = 0
         while c < 1000000:
             c+=1
             print(c)
 
-    def add_two_ints_callback(self, request, response):
+    def toggle_camera_callback(self, request, response):
         response.status = str(request.active)
         self.get_logger().info('Incoming request\nactive: %s' % (request.active))
 

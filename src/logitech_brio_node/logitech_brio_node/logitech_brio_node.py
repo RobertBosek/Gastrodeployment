@@ -9,7 +9,7 @@ import rclpy
 from rclpy.node import Node
 
 from sensor_msgs.msg import Image
-from example_interfaces.srv import SetBool
+from vigitia_interfaces.srv import BLEToggle
 
 from cv_bridge import CvBridge
 
@@ -18,13 +18,6 @@ from .logitech_brio import LogitechBrio
 DEBUG_MODE = True
 
 FLIP_IMAGE = False  # Necessary if the camera is upside down (very ressource intensive!)
-
-'''
-bool data # e.g. for hardware enabling / disabling
----
-bool success   # indicate successful run of triggered service
-string message # informational, e.g. for error messages
-'''
 
 
 class VIGITIABrioFramesNode(Node):
@@ -41,25 +34,19 @@ class VIGITIABrioFramesNode(Node):
 
         #self.logitech_brio_camera.start()
 
-        self.srv = self.create_service(SetBool, '/ble_signal', self.toggle_frames)
+        self.srv = self.create_service(BLEToggle, 'toggle_camera', self.toggle_camera_callback)
         print('service and publisher setup')
-        self.loop()
+        #self.loop()
 
-    def toggle_frames(self, request, response):
-        print('received')
-        print(request.data)
-        if request.data:
-            self.logitech_brio_camera.start()
-            response.success = True
-            response.message = 'frames on'
+    def toggle_camera_callback(self, request, response):
+
+        self.get_logger().info('Incoming request\nactive: %s' % request.active)
+
+        if request.active:
+            self.camera.start(self)
         else:
-            self.logitech_brio_camera.stop()
-            response.success = True
-            response.message = 'frames off'
-
-        print("[VIGITIA Brio Node]: toggle frame ", request.data)
-
-        #self.get_logger().info('Incoming request: %d b: %d' % (request.a, request.b))
+            self.camera.stop()
+        response.status = 'successful'
 
         return response
 
