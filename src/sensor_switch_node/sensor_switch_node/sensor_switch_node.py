@@ -15,8 +15,8 @@ class SensorSwitchNode(Node):
 
     def __init__(self):
         super().__init__('sensor_switch_node')
-        self.cli = self.create_client(SensorToggle, '/vigitia/toggle_camera')
-        self.srv = self.create_service(VIGITIAMovement, '/vigitia/person_near', self.toggle_ble_callback)
+        self.cli = self.create_client(SensorToggle, '/vigitia/sensor_toggle')
+        self.srv = self.create_service(VIGITIAMovement, '/vigitia/movement_toggle', self.movement_toggle_callback)
         self.sensor_switch = SensorSwitch(self)
 
         #TODO: remove loop
@@ -24,7 +24,9 @@ class SensorSwitchNode(Node):
             self.get_logger().info('service for /vigitia/toggle_camera not available, waiting...')
         self.req = SensorToggle.Request()
 
-    def toggle_ble_callback(self, request, response):
+        self.get_logger().info('initialized, waiting for action to start scanning...')
+
+    def movement_toggle_callback(self, request, response):
         self.get_logger().info('Incoming request: %s scanning for cube switch poition' % ('start' if request.active else 'end'))
 
         if request.active:
@@ -32,7 +34,6 @@ class SensorSwitchNode(Node):
         else:
             self.sensor_switch.stop()
         response.status = 'successful'
-
         return response
 
     def send_request(self, status):

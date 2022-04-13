@@ -56,7 +56,8 @@ class TableExtractorNode(Node):
         current_frame = self.cv_bridge.imgmsg_to_cv2(data)
 
         if DEBUG_MODE:
-            cv2.imshow("ros msg", current_frame)
+            prev = cv2.resize(current_frame, (1280, 720))
+            cv2.imshow("ros msg", prev)
 
         color_image_table = self.table_extraction_service.extract_table_area(current_frame, self.get_parameter("topic_rgb_full").get_parameter_value().string_value)
 
@@ -64,7 +65,8 @@ class TableExtractorNode(Node):
 
         if DEBUG_MODE:
             print("[Surface Extractor Node]: Mapping Table area")
-            cv2.imshow("table_area", color_image_table)
+            prev = cv2.resize(color_image_table, (1280, 720))
+            cv2.imshow("table_area", prev)
 
         cv2.waitKey(1)
 

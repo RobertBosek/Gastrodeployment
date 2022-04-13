@@ -9,7 +9,7 @@ class MovementDectectorClient(Node):
 
     def __init__(self):
         super().__init__('minimal_client_async')
-        self.cli = self.create_client(VIGITIAMovement, '/vigitia/person_near')
+        self.cli = self.create_client(VIGITIAMovement, '/vigitia/movement_toggle')
 
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('/vigitia/person_near service not available, waiting again...')

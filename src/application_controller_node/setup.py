@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'application_controller_node = application_controller_node.application_controller_node:main'
         ],
     },
 )

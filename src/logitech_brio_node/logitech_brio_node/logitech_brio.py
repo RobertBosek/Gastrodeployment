@@ -68,17 +68,6 @@ class LogitechBrio:
                             self.counter = 0
                             self.start_time = time.time()
 
-    def update(self, *args):
-
-        while self.started:
-            ret, frame = self.capture.read()
-
-            if frame is not None:
-                if frame.shape[0] < RES_Y or frame.shape[1] < RES_X:
-                    print('WARNING: Output image resolution for additional camera is smaller then expected!')
-                with self.read_lock:
-                    self.frame = frame
-                args[0].publisher.publish(args[0].cv_bridge.cv2_to_imgmsg(frame, "passthrough"))
 
     # Call this method from the outside to get the latest stored frame
     def get_last_frame(self):

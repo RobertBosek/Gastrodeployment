@@ -27,29 +27,31 @@ class VIGITIABrioFramesNode(Node):
         super().__init__('brio_frames_publisher')
 
         self.publisher = self.create_publisher(msg_type=Image, topic='/vigitia/brio_rgb_full', qos_profile=10)
-        self.ble_srv = self.create_service(SensorToggle, '/vigitia/toggle_camera', self.toggle_camera_callback)
-        self.move_srv = self.create_service(VIGITIAMovement, '/vigitia/person_near', self.toggle_movement_callback)
+        self.move_srv = self.create_service(VIGITIAMovement, '/vigitia/movement_toggle', self.movement_toggle_callback)
+        self.ble_srv = self.create_service(SensorToggle, '/vigitia/sensor_toggle', self.sensor_toggle_callback)
 
         self.cv_bridge = CvBridge()
 
-        self.logitech_brio_camera = LogitechBrio()
+        self.logitech_brio_camera = LogitechBrio(self)
         self.logitech_brio_camera.init_video_capture()
 
-        self.get_logger().info('initialized')
+        self.get_logger().info('initialized, waiting for action to activate camera...')
 
-    def toggle_movement_callback(self, request, response):
+        self.logitech_brio_camera.start()
+
+    def movement_toggle_callback(self, request, response):
         if not request.active:
             self.get_logger().info('Incoming request: no person at table stop frames')
-            self.camera.stop()
+            self.logitech_brio_camera.stop()
         response.status = 'successful'
         return response
 
-    def toggle_camera_callback(self, request, response):
+    def sensor_toggle_callback(self, request, response):
         self.get_logger().info('Incoming request: %s frames' % ('start' if request.active else 'end'))
         if request.active:
-            self.camera.start()
+            self.logitech_brio_camera.start()
         else:
-            self.camera.stop()
+            self.logitech_brio_camera.stop()
         response.status = 'successful'
         return response
 

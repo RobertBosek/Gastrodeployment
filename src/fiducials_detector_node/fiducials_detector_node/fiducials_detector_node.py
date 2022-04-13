@@ -44,6 +44,7 @@ class ImageSubscriber(Node):
         self.publisher = self.create_publisher(msg_type=ArucoList,
                                                topic='/aruco_list',
                                                qos_profile=10)
+        self.get_logger().info('initialized')
 
     def listener_callback(self, data):
         """
@@ -59,18 +60,18 @@ class ImageSubscriber(Node):
         # Call the VIGITIA service
         aruco_markers = self.fiducials_detector.detect_fiducials(frame_gray)
 
-        aruco_list = self.convert_to_aruco_interface_msg(aruco_markers, data.header)
-
         if len(aruco_markers) > 0:
+            aruco_list = self.convert_to_aruco_interface_msg(aruco_markers, data.header)
             self.publisher.publish(aruco_list)
 
             # Display image
             if DEBUG_MODE:
-                print("[Fiducials Detector Node]: publishing ", len(aruco_markers), " detected markers")
+                self.get_logger().info('detection rate: %s' % self.fiducials_detector.marker_detection_rate)
                 marker_detection = current_frame.copy()
                 for marker in aruco_markers:
                     aruco.drawDetectedMarkers(marker_detection, [np.array([marker['corners']], dtype=np.float32)], np.array([marker['id']], dtype=np.int))
-                cv2.imshow('markers_detected', marker_detection)
+                prev = cv2.resize(marker_detection, (1280, 720))
+                cv2.imshow('markers_detected', prev)
 
         cv2.waitKey(1)
 

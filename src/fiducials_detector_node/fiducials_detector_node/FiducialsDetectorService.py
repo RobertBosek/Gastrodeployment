@@ -11,16 +11,19 @@ ARUCO_DICT = aruco.DICT_4X4_100
 # ARUCO_DICT = aruco.DICT_6X6_1000
 
 DEBUG_MODE = False
-
+N_FRAMES_DETECTION_RATIO = 100
 
 class FiducialsDetectorService:
 
     aruco_dictionary = None
     aruco_detector_parameters = None
-
     marker_frame = None
 
+    markers_detected = [False] * N_FRAMES_DETECTION_RATIO
+    marker_detection_rate = 0
+
     def __init__(self):
+        self.marker_detection_rate = None
         self.aruco_dictionary = aruco.Dictionary_get(ARUCO_DICT)
         self.aruco_detector_parameters = aruco.DetectorParameters_create()
         print('[FiducialsDetectorService]: Ready')
@@ -48,6 +51,9 @@ class FiducialsDetectorService:
                                 'corners': corners[i][0],
                                 'centroid': self.centroid(corners[i][0])}
                 aruco_markers.append(aruco_marker)
+
+        self.markers_detected = self.markers_detected[1:N_FRAMES_DETECTION_RATIO] + [True if (len(aruco_markers) > 0) else False]
+        self.marker_detection_rate = sum(self.markers_detected)/N_FRAMES_DETECTION_RATIO
 
         return aruco_markers
 

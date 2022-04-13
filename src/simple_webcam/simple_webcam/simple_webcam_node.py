@@ -33,7 +33,9 @@ class WebcamNode(Node):
 
         self.camera = GenericWebcam(self)
         self.camera.init_video_capture()
-        self.get_logger().info('initialized')
+        self.get_logger().info('initialized, waiting for action to activate camera...')
+
+        # self.camera.start()
 
     def toggle_movement_callback(self, request, response):
         if not request.active:
