@@ -8,7 +8,7 @@ import cv2
 import threading
 import time
 
-CAMERA_ID = 0
+CAMERA_ID = 1
 RES_X = 4096
 RES_Y = 2160
 FPS = 30
@@ -55,8 +55,10 @@ class LogitechBrio:
             # If a new frame is available, store it in the corresponding variable
             if frame is not None:
                 self.counter += 1
+                '''
                 if frame.shape[0] < RES_Y or frame.shape[1] < RES_X:
                     print('WARNING: Output image resolution for additional camera is smaller then expected!')
+                '''
                 with self.read_lock:
                     self.frame = frame
 
@@ -67,7 +69,11 @@ class LogitechBrio:
                                 "FPS: %s" % round(self.counter / (time.time() - self.start_time), 1))
                             self.counter = 0
                             self.start_time = time.time()
-
+                    else:
+                        if (time.time() - self.start_time) > 1:  # displays the frame rate every 1 second
+                            print("FPS: %s" % round(self.counter / (time.time() - self.start_time), 1))
+                            self.counter = 0
+                            self.start_time = time.time()
 
     # Call this method from the outside to get the latest stored frame
     def get_last_frame(self):
@@ -88,6 +94,7 @@ class LogitechBrio:
     # Release the camera if the script is stopped
     def __exit__(self, exec_type, exc_value, traceback):
         self.capture.release()
+
 
 if __name__ == '__main__':
     camera = LogitechBrio()

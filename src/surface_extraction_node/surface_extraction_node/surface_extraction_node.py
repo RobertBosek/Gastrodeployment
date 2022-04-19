@@ -13,37 +13,36 @@ from cv_bridge import CvBridge
 
 from .table_extraction_service import TableExtractionService
 
-DEBUG_MODE = True
-
 
 class TableExtractorNode(Node):
 
     def __init__(self):
         super().__init__('brio_subscriber_tablearea_publisher')
 
+        param_desc_debug = ParameterDescriptor(type=ParameterType.PARAMETER_BOOL, description='debug mode bool')
+        param_desc_rgb_full = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of subscribing topic')
+        param_desc_queue_length = ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER, description='length of the queue')
+        param_desc_rgb_table = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of publishing topic')
+
+        self.declare_parameter('DEBUG_MODE', True, param_desc_debug)
+        self.declare_parameter('topic_rgb_full', '/vigitia/brio_rgb_full', param_desc_rgb_full)
+        self.declare_parameter('queue_length', 10, param_desc_queue_length)
+        self.declare_parameter('topic_rgb_table', '/vigitia/rgb_table', param_desc_rgb_table)
+
         self.cv_bridge = CvBridge()
 
-        #TODO: reloadable config file
+        self.create_subscription(msg_type=Image,
+                                 topic=self.get_parameter("topic_rgb_full").get_parameter_value().string_value,
+                                 callback=self.listener_callback,
+                                 qos_profile=self.get_parameter("queue_length").get_parameter_value().integer_value)
+        self.publisher = self.create_publisher(msg_type=Image,
+                                               topic=self.get_parameter("topic_rgb_table").get_parameter_value().string_value,
+                                               qos_profile=self.get_parameter("queue_length").get_parameter_value().integer_value)
+
+        self.cv_bridge = CvBridge()
+
+        # TODO: reloadable config file
         self.table_extraction_service = TableExtractionService()
-
-        rgb_full_parameter = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='Camera type')
-        self.declare_parameter('topic_rgb_full', '/vigitia/brio_rgb_full', rgb_full_parameter)
-
-        queue_length = ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER, description='Length of the queue')
-        self.declare_parameter('queue_length', 10, queue_length)
-
-        self.subscription = self.create_subscription(
-            Image,  # Datentyp
-            self.get_parameter("topic_rgb_full").get_parameter_value().string_value,  # Name des Topics
-            self.listener_callback,
-            self.get_parameter("queue_length").get_parameter_value().integer_value)
-
-        rgb_table_parameter = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='Camera type')
-        self.declare_parameter('topic_rgb_table', '/vigitia/rgb_table', rgb_table_parameter)
-
-        self.publisher_rgb_table = self.create_publisher(msg_type=Image,
-                                                         topic=self.get_parameter("topic_rgb_table").get_parameter_value().string_value,
-                                                         qos_profile=self.get_parameter("queue_length").get_parameter_value().integer_value)
 
     def listener_callback(self, data):
         """
@@ -55,15 +54,15 @@ class TableExtractorNode(Node):
         # Convert ROS Image message to OpenCV image
         current_frame = self.cv_bridge.imgmsg_to_cv2(data)
 
-        if DEBUG_MODE:
+        if self.get_parameter("DEBUG_MODE").get_parameter_value().bool_value:
             prev = cv2.resize(current_frame, (1280, 720))
             cv2.imshow("ros msg", prev)
 
         color_image_table = self.table_extraction_service.extract_table_area(current_frame, self.get_parameter("topic_rgb_full").get_parameter_value().string_value)
 
-        self.publisher_rgb_table.publish(self.cv_bridge.cv2_to_imgmsg(color_image_table, "passthrough"))
+        self.publisher.publish(self.cv_bridge.cv2_to_imgmsg(color_image_table, "passthrough"))
 
-        if DEBUG_MODE:
+        if self.get_parameter("DEBUG_MODE").get_parameter_value().bool_value:
             print("[Surface Extractor Node]: Mapping Table area")
             prev = cv2.resize(color_image_table, (1280, 720))
             cv2.imshow("table_area", prev)

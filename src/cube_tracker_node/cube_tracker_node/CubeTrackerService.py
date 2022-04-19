@@ -23,8 +23,8 @@ DEBUG_MODE = False
 # These markers are in each corner with a distance of 0.2cm to each side of the corner.
 # If less than 4 markers are detected different substitution and approximation methods are used to robustely track the cube
 class CubeDetector:
-    def __init__(self):
-        print('[CubesideDetectionService]: Ready')
+    def __init__(self, node=None):
+        self.node = node
 
     def preselect_markers(self, marker_list):
         markers = sorted(marker_list, key=lambda found_markers: found_markers['id'])
@@ -40,21 +40,24 @@ class CubeDetector:
     # this only works for markers with ids between 0 and 23
     def get_cube_spatial_info(self, markers):
         if len(markers) == 4:
-            if DEBUG_MODE:
-                print("[CubesideDetectionService]: 4 markers found")
+            if self.node is not None:
+                if self.node.get_parameter("DEBUG_MODE").get_parameter_value().bool_value:
+                    self.node.get_logger().info("4 markers found")
             return self.__get_geometrics(markers)
 
         elif len(markers) == 3:
-            if DEBUG_MODE:
-                print("[CubesideDetectionService]: 3 markers found")
+            if self.node is not None:
+                if self.node.get_parameter("DEBUG_MODE").get_parameter_value().bool_value:
+                    self.node.get_logger().info("3 markers found")
             # get the mean orthogonal length of all present markers
             orthogonal_lengths = self.__get_orth_lengths(markers)
             markers_with_substitution, cube_centroid = self.__three_marker_substitution(markers, orthogonal_lengths)
             return self.__get_geometrics(markers_with_substitution, cube_centroid)
 
         elif len(markers) == 2:
-            if DEBUG_MODE:
-                print("[CubesideDetectionService]: 2 markers found")
+            if self.node is not None:
+                if self.node.get_parameter("DEBUG_MODE").get_parameter_value().bool_value:
+                    self.node.get_logger().info("2 markers found")
             approx = []
             # get an approximation of the cubeside geoms for each marker
             # then return the mean of both approximated cubeside geoms
@@ -68,13 +71,15 @@ class CubeDetector:
             return cube_geoms
 
         elif len(markers) == 1:
-            if DEBUG_MODE:
-                print("[CubesideDetectionService]: 1 marker found")
+            if self.node is not None:
+                if self.node.get_parameter("DEBUG_MODE").get_parameter_value().bool_value:
+                    self.node.get_logger().info("1 markers found")
             return self.__approx_cube_geoms(markers)
 
         else:
-            if DEBUG_MODE:
-                print("[CubesideDetectionService]: Detection is only possible with one up to four markers")
+            if self.node is not None:
+                if self.node.get_parameter("DEBUG_MODE").get_parameter_value().bool_value:
+                    self.node.get_logger().info("Detection is only possible with one up to four markers")
             return None
 
     # uses one corner marker of a cubeside to approximate that sides geometrics
@@ -116,8 +121,9 @@ class CubeDetector:
             substitute_id = markers[2]['id']+1
             substitute_centroid = cube_centroid + cube_centroid - np.array(markers[1]['centroid'])
         else:
-            if DEBUG:
-                print('[CubesideDetectionService]: wrong missing marker ID')
+            if self.node is not None:
+                if self.node.get_parameter("DEBUG_MODE").get_parameter_value().bool_value:
+                    self.node.get_logger().info('wrong missing marker ID')
             return None
 
         substitute_corners = orth_lengths + substitute_centroid

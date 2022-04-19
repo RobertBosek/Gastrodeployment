@@ -51,6 +51,7 @@ class SensorSwitch:
     def stop(self):
         if self.started:
             self.started = False
+            self.switch_active = False
             self.thread.join()
 
 

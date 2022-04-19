@@ -21,29 +21,29 @@ class ImageSubscriber(Node):
     def __init__(self):
         super().__init__('tablearea_subscriber')
 
-        self.cv_bridge = CvBridge()
+        param_desc_debug = ParameterDescriptor(type=ParameterType.PARAMETER_BOOL, description='debug mode bool')
+        param_desc_rgb_table = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of subscribing topic')
+        param_desc_queue_length = ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER, description='length of the queue')
+        param_desc_aruco_list = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of publishing topic')
 
-        # Set Parameters
-        topic_parameter = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='Camera type')
-        self.declare_parameter('topic_parameter', '/vigitia/rgb_table', topic_parameter)
+        self.declare_parameter('DEBUG_MODE', True, param_desc_debug)
+        self.declare_parameter('topic_rgb_table', '/vigitia/rgb_table', param_desc_rgb_table)
+        self.declare_parameter('queue_length', 10, param_desc_queue_length)
+        self.declare_parameter('aruco_list', '/vigitia/aruco_list', param_desc_aruco_list)
 
-        queue_length = ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER, description='Length of the queue')
-        self.declare_parameter('queue_length', 10, queue_length)
-
-        # Init VIGITIA Service
-        self.fiducials_detector = FiducialsDetectorService()
-
-        # Create the subscriber. This subscriber will receive an Image
-        # from the /rgb/image_raw topic. The queue size is 10 messages.
-        self.subscription = self.create_subscription(
-            Image,  # Datentyp
-            self.get_parameter("topic_parameter").get_parameter_value().string_value,  # Name des Topics
-            self.listener_callback,
-            self.get_parameter("queue_length").get_parameter_value().integer_value)
+        self.create_subscription(msg_type=Image,
+                                 topic=self.get_parameter("topic_rgb_table").get_parameter_value().string_value,
+                                 callback=self.listener_callback,
+                                 qos_profile=self.get_parameter("queue_length").get_parameter_value().integer_value)
 
         self.publisher = self.create_publisher(msg_type=ArucoList,
-                                               topic='/aruco_list',
-                                               qos_profile=10)
+                                               topic=self.get_parameter("aruco_list").get_parameter_value().string_value,
+                                               qos_profile=self.get_parameter("queue_length").get_parameter_value().integer_value)
+
+        self.cv_bridge = CvBridge()
+
+        self.fiducials_detector = FiducialsDetectorService()
+
         self.get_logger().info('initialized')
 
     def listener_callback(self, data):
@@ -65,7 +65,7 @@ class ImageSubscriber(Node):
             self.publisher.publish(aruco_list)
 
             # Display image
-            if DEBUG_MODE:
+            if self.get_parameter("DEBUG_MODE").get_parameter_value().bool_value:
                 self.get_logger().info('detection rate: %s' % self.fiducials_detector.marker_detection_rate)
                 marker_detection = current_frame.copy()
                 for marker in aruco_markers:
@@ -103,21 +103,10 @@ class ImageSubscriber(Node):
 
 
 def main(args=None):
-    # Initialize the rclpy library
     rclpy.init(args=args)
-
-    # Create the node
     image_subscriber = ImageSubscriber()
-
-    # Spin the node so the callback function is called.
     rclpy.spin(image_subscriber)
-
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
     image_subscriber.destroy_node()
-
-    # Shutdown the ROS client library for Python
     rclpy.shutdown()
 
 

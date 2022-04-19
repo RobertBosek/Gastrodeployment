@@ -24,6 +24,8 @@ class DeggingerEventService:
         d = dt.now()
         file = "{}/{}_{}_{}_{}{}".format(CACHE_PATH, FILENAME[0], d.year, d.month, d.day, FILENAME[1])
 
+        print(os.getcwd())
+
         if os.path.isfile(file):
             print("no call")
             with open(file, 'r') as f:

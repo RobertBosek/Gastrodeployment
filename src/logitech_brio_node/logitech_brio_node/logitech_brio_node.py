@@ -7,6 +7,7 @@ import cv2
 
 import rclpy
 from rclpy.node import Node
+from rcl_interfaces.msg import ParameterType, ParameterDescriptor
 
 from sensor_msgs.msg import Image
 from vigitia_interfaces.srv import SensorToggle
@@ -16,8 +17,6 @@ from cv_bridge import CvBridge
 
 from .logitech_brio import LogitechBrio
 
-DEBUG_MODE = True
-
 FLIP_IMAGE = False  # Necessary if the camera is upside down (very ressource intensive!)
 
 
@@ -26,11 +25,34 @@ class VIGITIABrioFramesNode(Node):
     def __init__(self):
         super().__init__('brio_frames_publisher')
 
-        self.publisher = self.create_publisher(msg_type=Image, topic='/vigitia/brio_rgb_full', qos_profile=10)
-        self.move_srv = self.create_service(VIGITIAMovement, '/vigitia/movement_toggle', self.movement_toggle_callback)
-        self.ble_srv = self.create_service(SensorToggle, '/vigitia/sensor_toggle', self.sensor_toggle_callback)
+        param_desc_debug = ParameterDescriptor(type=ParameterType.PARAMETER_BOOL, description='debug mode bool')
+        param_desc_img_flip = ParameterDescriptor(type=ParameterType.PARAMETER_BOOL, description='flip image bool')
+        param_desc_rgb_full = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of publishing topic')
+        param_desc_movement_toggle = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of movement toggle service')
+        param_desc_sensor_toggle = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of sensor toggle service')
+        param_desc_queue_length = ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER, description='length of the queue')
+
+
+        self.declare_parameter('DEBUG_MODE', True, param_desc_debug)
+        self.declare_parameter('FLIP_IMAGE', False, param_desc_img_flip)
+        self.declare_parameter('topic_rgb_full', '/vigitia/brio_rgb_full', param_desc_rgb_full)
+        self.declare_parameter('srv_movement_toggle', '/vigitia/srv/movement_toggle', param_desc_movement_toggle)
+        self.declare_parameter('srv_sensor_toggle', '/vigitia/srv/sensor_toggle', param_desc_sensor_toggle)
+        self.declare_parameter('queue_length', 10, param_desc_queue_length)
 
         self.cv_bridge = CvBridge()
+
+        self.publisher = self.create_publisher(msg_type=Image,
+                                               topic=self.get_parameter("topic_rgb_full").get_parameter_value().string_value,
+                                               qos_profile=self.get_parameter("queue_length").get_parameter_value().integer_value)
+
+        self.create_service(srv_type=VIGITIAMovement,
+                            srv_name=self.get_parameter("srv_movement_toggle").get_parameter_value().string_value,
+                            callback=self.movement_toggle_callback)
+
+        self.create_service(srv_type=SensorToggle,
+                            srv_name=self.get_parameter("srv_sensor_toggle").get_parameter_value().string_value,
+                            callback=self.sensor_toggle_callback)
 
         self.logitech_brio_camera = LogitechBrio(self)
         self.logitech_brio_camera.init_video_capture()
@@ -41,7 +63,7 @@ class VIGITIABrioFramesNode(Node):
 
     def movement_toggle_callback(self, request, response):
         if not request.active:
-            self.get_logger().info('Incoming request: no person at table stop frames')
+            self.get_logger().info('Incoming request: no person at table, stop frames')
             self.logitech_brio_camera.stop()
         response.status = 'successful'
         return response

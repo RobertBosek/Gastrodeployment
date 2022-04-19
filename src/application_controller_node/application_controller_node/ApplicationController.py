@@ -18,6 +18,7 @@ interframe_wait_ms = 30
 
 info_filename = 'daten.png'
 instruction_filename = 'events.jpg'
+area_filename = 'icon-info.png'
 
 app_id = {0: 'info',
           1: 'menu',
@@ -41,6 +42,7 @@ class AppController:
         self.info_screen = cv2.imread(data_dir + info_filename)
         self.info_screen = cv2.resize(self.info_screen, (600, 600))
         self.icon = cv2.imread(data_dir + instruction_filename)
+        self.cube_area = cv2.imread(data_dir + area_filename)
 
     def reset_to_defaults(self):
         self.pose = None
@@ -67,7 +69,23 @@ class AppController:
             elif self.mode == [True, False, False]:
                 self.show_info_screen()
             elif self.mode == [True, True, False]:
+                # Würfelarea anzeigen
                 self.show_icon_screen()
+            else:
+                self.show_cube_area()
+
+    def show_cube_area(self):
+        # show the image, provide window name first
+        '''
+        while self.mode == [True, False, False]:
+            cv2.imshow(window_name, self.data_holder[6])
+            if cv2.waitKey(interframe_wait_ms) & 0x7F == ord('q'):
+                print("Exit requested.")
+                break
+        '''
+        cv2.imshow(window_name, self.cube_area)
+        while self.mode == [True, True, False]:
+            cv2.waitKey(1)
 
     def show_icon_screen(self):
         # show the image, provide window name first
@@ -78,9 +96,15 @@ class AppController:
                 print("Exit requested.")
                 break
         '''
+
+        print('test')
         cv2.imshow(window_name, self.icon)
+
+
         while self.mode == [True, True, False]:
-            cv2.waitKey(16)
+            print('test')
+            cv2.waitKey(1)
+            print('test')
 
     def show_info_screen(self):
         # show the image, provide window name first
@@ -93,7 +117,7 @@ class AppController:
         '''
         cv2.imshow(window_name, self.info_screen)
         while self.mode == [True, False, False]:
-            cv2.waitKey(16)
+            cv2.waitKey(1)
 
     # from https://stackoverflow.com/questions/49949639/fullscreen-a-video-on-opencv
     def show_demo_video(self):

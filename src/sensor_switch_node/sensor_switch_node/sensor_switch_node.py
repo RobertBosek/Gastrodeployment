@@ -7,6 +7,7 @@ from vigitia_interfaces.srv import SensorToggle
 from vigitia_interfaces.srv import SensorToggle as VIGITIAMovement
 import rclpy
 from rclpy.node import Node
+from rcl_interfaces.msg import ParameterType, ParameterDescriptor
 
 from .sensor_switch import SensorSwitch
 
@@ -15,8 +16,18 @@ class SensorSwitchNode(Node):
 
     def __init__(self):
         super().__init__('sensor_switch_node')
-        self.cli = self.create_client(SensorToggle, '/vigitia/sensor_toggle')
-        self.srv = self.create_service(VIGITIAMovement, '/vigitia/movement_toggle', self.movement_toggle_callback)
+
+        param_desc_movement_toggle = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of movement toggle service')
+        param_desc_sensor_toggle = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of sensor toggle service')
+
+        self.declare_parameter('srv_movement_toggle', '/vigitia/srv/movement_toggle', param_desc_movement_toggle)
+        self.declare_parameter('srv_sensor_toggle', '/vigitia/srv/sensor_toggle', param_desc_sensor_toggle)
+
+        self.cli = self.create_client(srv_type=SensorToggle,
+                                      srv_name=self.get_parameter("srv_sensor_toggle").get_parameter_value().string_value)
+        self.srv = self.create_service(srv_type=VIGITIAMovement,
+                                       srv_name=self.get_parameter("srv_movement_toggle").get_parameter_value().string_value,
+                                       callback=self.movement_toggle_callback)
         self.sensor_switch = SensorSwitch(self)
 
         #TODO: remove loop
@@ -43,9 +54,7 @@ class SensorSwitchNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-
     sensor_switch_node = SensorSwitchNode()
-
     rclpy.spin(sensor_switch_node)
     '''
     while rclpy.ok():

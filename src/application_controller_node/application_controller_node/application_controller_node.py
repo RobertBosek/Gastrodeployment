@@ -26,44 +26,52 @@ class AppControllerNode(Node):
 
         self.cv_bridge = CvBridge()
 
-        # Set Parameters
-        topic_parameter = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='detected cube pose')
-        self.declare_parameter('cube_pose_topic_parameter', '/cube_pose', topic_parameter)
+        param_desc_debug = ParameterDescriptor(type=ParameterType.PARAMETER_BOOL, description='debug mode bool')
+        param_desc_movement_toggle = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of movement toggle service')
+        param_desc_sensor_toggle = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of sensor toggle service')
+        param_desc_cube_pose = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of publishing topic')
+        param_desc_rgb_table = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of publishing topic')
+        param_desc_queue_length = ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER, description='length of the queue')
 
-        queue_length = ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER, description='Length of the queue')
-        self.declare_parameter('queue_length', 10, queue_length)
+        self.declare_parameter('DEBUG_MODE', True, param_desc_debug)
+        self.declare_parameter('topic_rgb_table', '/vigitia/rgb_table', param_desc_rgb_table)
+        self.declare_parameter('topic_cube_pose', '/vigitia/cube_pose', param_desc_cube_pose)
+        self.declare_parameter('queue_length', 10, param_desc_queue_length)
+        self.declare_parameter('srv_movement_toggle', '/vigitia/srv/movement_toggle', param_desc_movement_toggle)
+        self.declare_parameter('srv_sensor_toggle', '/vigitia/srv/sensor_toggle', param_desc_sensor_toggle)
+
+        self.subsc_cube_pose = self.create_subscription(msg_type=ArucoMarker,
+                                                        topic=self.get_parameter('topic_cube_pose').get_parameter_value().string_value,
+                                                        callback=self.listener_callback_cubepose,
+                                                        qos_profile=self.get_parameter("queue_length").get_parameter_value().integer_value)
+
+        self.subsc_rgb_table = self.create_subscription(msg_type=Image,
+                                                        topic=self.get_parameter('topic_rgb_table').get_parameter_value().string_value,
+                                                        callback=self.listener_callback_camera,
+                                                        qos_profile=self.get_parameter("queue_length").get_parameter_value().integer_value)
+
+        self.move_srv = self.create_service(srv_type=VIGITIAMovement,
+                                            srv_name=self.get_parameter("srv_movement_toggle").get_parameter_value().string_value,
+                                            callback=self.movement_toggle_callback)
+
+        self.ble_srv = self.create_service(srv_type=SensorToggle,
+                                           srv_name=self.get_parameter("srv_sensor_toggle").get_parameter_value().string_value,
+                                           callback=self.sensor_toggle_callback)
 
         # Init VIGITIA Service
         self.app_control = AppController(self)
 
-        # Create the subscriber. This subscriber will receive an Image
-        # from the /rgb/image_raw topic. The queue size is 10 messages.
-        self.subscription = self.create_subscription(
-            ArucoMarker,  # Datentyp
-            self.get_parameter("cube_pose_topic_parameter").get_parameter_value().string_value,  # Name des Topics
-            self.listener_callback_cubepose,
-            self.get_parameter("queue_length").get_parameter_value().integer_value)
-
-        topic_parameter = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='Camera type')
-        self.declare_parameter('topic_parameter', '/vigitia/rgb_table', topic_parameter)
-
-        self.subscription = self.create_subscription(
-            Image,  # Datentyp
-            self.get_parameter("topic_parameter").get_parameter_value().string_value,  # Name des Topics
-            self.listener_callback_camera,
-            self.get_parameter("queue_length").get_parameter_value().integer_value)
-
-        self.move_srv = self.create_service(VIGITIAMovement, '/vigitia/movement_toggle', self.movement_toggle_callback)
-        self.ble_srv = self.create_service(SensorToggle, '/vigitia/sensor_toggle', self.sensor_toggle_callback)
         self.app_control.start()
 
     def sensor_toggle_callback(self, request, response):
         self.get_logger().info('Incoming request: %s handling cube poses' % ('start' if request.active else 'end'))
 
         if request.active:
+            print('hallo')
             self.app_control.mode[1] = True
             if self.app_control.pose is not None:
                 self.app_control.manage_input()
+            print('hallo2')
         else:
             self.app_control.mode[1] = False
             self.app_control.mode[2] = False

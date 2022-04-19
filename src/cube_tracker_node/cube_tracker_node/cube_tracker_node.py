@@ -5,37 +5,36 @@ from rclpy.node import Node  # Handles the creation of nodes
 from rcl_interfaces.msg import ParameterType, ParameterDescriptor
 from vigitia_interfaces.msg import ArucoList, ArucoMarker
 
-from sensor_msgs.msg import Image  # Image is the message type
-from cv_bridge import CvBridge
 
-DEBUG_MODE = True
-
-class ArucoSubscriber(Node):
+class CubeTrackerNode(Node):
 
     def __init__(self):
         super().__init__('aruco_subscriber')
 
-        # Set Parameters
-        topic_parameter = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='detected aruco markers')
-        self.declare_parameter('aruco_topic_parameter', '/aruco_list', topic_parameter)
+        param_desc_debug = ParameterDescriptor(type=ParameterType.PARAMETER_BOOL, description='debug mode bool')
+        param_desc_aruco_list = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of subscribing topic')
+        param_desc_queue_length = ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER, description='length of the queue')
+        param_desc_cube_pose = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of publishing topic')
 
-        queue_length = ParameterDescriptor(type=ParameterType.PARAMETER_INTEGER, description='Length of the queue')
-        self.declare_parameter('queue_length', 10, queue_length)
+        self.declare_parameter('DEBUG_MODE', True, param_desc_debug)
+        self.declare_parameter('topic_aruco_list', '/vigitia/aruco_list', param_desc_aruco_list)
+        self.declare_parameter('queue_length', 10, param_desc_queue_length)
+        self.declare_parameter('topic_cube_pose', '/vigitia/cube_pose', param_desc_cube_pose)
+
+        self.create_subscription(msg_type=ArucoList,
+                                 topic=self.get_parameter("topic_aruco_list").get_parameter_value().string_value,
+                                 callback=self.listener_callback,
+                                 qos_profile=self.get_parameter("queue_length").get_parameter_value().integer_value)
+
+        self.publisher= self.create_publisher(msg_type=ArucoMarker,
+                                              topic=self.get_parameter("topic_cube_pose").get_parameter_value().string_value,
+                                              qos_profile=self.get_parameter("queue_length").get_parameter_value().integer_value)
 
         # Init VIGITIA Service
-        self.cube_detector = CubeDetector()
+        self.cube_detector = CubeDetector(self)
 
-        # Create the subscriber. This subscriber will receive an Image
-        # from the /rgb/image_raw topic. The queue size is 10 messages.
-        self.subscription = self.create_subscription(
-            ArucoList,  # Datentyp
-            self.get_parameter("aruco_topic_parameter").get_parameter_value().string_value,  # Name des Topics
-            self.listener_callback,
-            self.get_parameter("queue_length").get_parameter_value().integer_value)
+        self.get_logger().info('initialized')
 
-        self.publisher = self.create_publisher(msg_type=ArucoMarker,
-                                               topic='/cube_pose',
-                                               qos_profile=10)
 
     def listener_callback(self, data):
         """
@@ -54,7 +53,7 @@ class ArucoSubscriber(Node):
             detected_markers.append(detected_marker)
 
         markers = self.cube_detector.preselect_markers(detected_markers)
-        #cube geometrics are structured just like aruco marker information
+        # cube geometrics are structured just like aruco marker information
         cube_geoms = self.cube_detector.get_cube_spatial_info(markers)
 
         if cube_geoms:
@@ -77,28 +76,15 @@ class ArucoSubscriber(Node):
             print(cube_pose)
             self.publisher.publish(cube_pose)
 
-            # Display image
-            if DEBUG_MODE:
-                print("[Cube Tracker Node]: Publishing Cube Pose", cube_geoms)
-
+            if self.get_parameter("DEBUG_MODE").get_parameter_value().bool_value:
+                self.get_logger().info("Publishing Cube Pose %s" % str(cube_geoms))
 
 
 def main(args=None):
-    # Initialize the rclpy library
     rclpy.init(args=args)
-
-    # Create the node
-    aruco_subscriber = ArucoSubscriber()
-
-    # Spin the node so the callback function is called.
-    rclpy.spin(aruco_subscriber)
-
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    aruco_subscriber.destroy_node()
-
-    # Shutdown the ROS client library for Python
+    cube_tracker_node = CubeTrackerNode()
+    rclpy.spin(cube_tracker_node)
+    cube_tracker_node.destroy_node()
     rclpy.shutdown()
 
 
