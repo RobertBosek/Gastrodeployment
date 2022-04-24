@@ -16,7 +16,7 @@ setup(
     maintainer='vitus',
     maintainer_email='vitus.maierhoefer@gmail.com',
     description='TODO: Package description',
-    license='TODO: License declaration',
+    license='CC BY-SA 4.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
