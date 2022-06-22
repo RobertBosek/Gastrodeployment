@@ -13,8 +13,6 @@ from vigitia_interfaces.msg import ArucoList, ArucoMarker
 
 from cv_bridge import CvBridge
 
-DEBUG_MODE = True
-
 
 class ImageSubscriber(Node):
 
@@ -27,12 +25,12 @@ class ImageSubscriber(Node):
         param_desc_aruco_list = ParameterDescriptor(type=ParameterType.PARAMETER_STRING, description='name of publishing topic')
 
         self.declare_parameter('DEBUG_MODE', True, param_desc_debug)
-        self.declare_parameter('topic_rgb_table', '/vigitia/rgb_table', param_desc_rgb_table)
+        self.declare_parameter('topic_image', '/vigitia/rgb_table', param_desc_rgb_table)
         self.declare_parameter('queue_length', 10, param_desc_queue_length)
         self.declare_parameter('aruco_list', '/vigitia/aruco_list', param_desc_aruco_list)
 
         self.create_subscription(msg_type=Image,
-                                 topic=self.get_parameter("topic_rgb_table").get_parameter_value().string_value,
+                                 topic=self.get_parameter("topic_image").get_parameter_value().string_value,
                                  callback=self.listener_callback,
                                  qos_profile=self.get_parameter("queue_length").get_parameter_value().integer_value)
 
